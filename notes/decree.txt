@@ -1,0 +1,68 @@
+Decree OS
+
+https://blog.legitbs.net/2016/05/what-is-decree.html
+
+https://github.com/CyberGrandChallenge/cgc-release-documentation/blob/master/walk-throughs/running-the-vm.md
+
+http://kphan451.blogspot.com/2017/09/booting-decree-vm-in-vmware.html
+
+https://github.com/gokulkrishna01/decree
+
+https://github.com/CyberGrandChallenge/cgc-release-documentation/blob/master/walk-throughs/running-the-vm.md
+
+https://fadec0d3.blogspot.com/2016/05/defcon-ctf-quals-2016-easy-prasky.html
+
+http://dandylife.net/blog/archives/634
+
+https://www.lazenca.net/pages/viewpage.action?pageId=327916
+
+------
+
+webarchive
+find the files all scattered on the way back machine
+
+very likely to get
+    bad gateway
+    time out
+    forbidden
+
+need:
+  cgc-linux-dev.box
+  vm.json
+  Vagrantfile
+
+might be able to make work with only Vagrantfile and .box file ???
+https://www.vagrantup.com/docs/boxes/format.html
+https://stackoverflow.com/questions/22065698/how-to-add-a-downloaded-box-file-to-vagrant
+
+
+* cgc-linux-dev.box
+
+https://s3.amazonaws.com/cgcdist/boxes/cgc-linux-dev.box
+
+https://web.archive.org/web/20160320082231/http://repo.cybergrandchallenge.com/boxes/
+
+
+* Vagrantfile
+
+search for : http://repo.cybergrandchallenge.com/boxes/Vagrantfile
+
+link: https://web.archive.org/web/20150520004609/http://repo.cybergrandchallenge.com/boxes/Vagrantfile
+
+
+-------------
+
+
+try to do with out vm.json
+cant find working version fo theat,
+but should be able to get this up and running with out it
+
+yes it does
+
+add box file directly
+
+vagrant add box ./path/to/file.box
+
+https://stackoverflow.com/questions/22065698/how-to-add-a-downloaded-box-file-to-vagrant
+
+

@@ -1,0 +1,11 @@
+Risc Architecture support for Ramblr
+
+
+Goal to integrate the changes into the newer angr
+for usage with modern angr on python3
+
+
+https://github.com/angr/angr/pull/1183
+https://github.com/AndrewFasano/angr/tree/rarem_refactor
+https://github.com/AndrewFasano/ramblr-testsuite
+

@@ -1,0 +1,6 @@
+other software tools which can be cross compiled to ARM
+
+https://www.gnu.org/software/coreutils/
+
+https://www.gnu.org/software/binutils/
+

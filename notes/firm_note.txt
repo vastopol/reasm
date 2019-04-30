@@ -1,0 +1,28 @@
+* ARM Firmwares
+
+    * SCP - System Control Processor
+    https://github.com/ARM-software/SCP-firmware
+
+    * Trusted Firmware
+    https://github.com/ARM-software/arm-trusted-firmware
+    https://review.trustedfirmware.org/admin/repos/TF-A%2Ftrusted-firmware-a
+    https://www.trustedfirmware.org/
+    https://git.trustedfirmware.org/TF-A/trusted-firmware-a.git/
+    https://git.trustedfirmware.org/trusted-firmware-m.git/
+    https://community.arm.com/developer/tools-software/oss-platforms/w/docs/299/trusted-firmware-a
+    https://www.slideshare.net/linaroorg/arm-trusted-firmareforarmv8alcu13
+
+* Other Firmware:
+https://en.wikipedia.org/wiki/Custom_firmware
+
+    * Tomato - Broadcom Routers
+    https://en.wikipedia.org/wiki/Tomato_(firmware)
+    http://www.polarcloud.com/tomato
+
+    * Fresh Tomato
+    http://freshtomato.org/
+    https://exotic.se/freshtomato-arm/
+    https://bitbucket.org/kille72/freshtomato-arm
+
+    * etc...
+

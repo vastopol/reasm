@@ -4,3 +4,50 @@ https://www.gnu.org/software/coreutils/
 
 https://www.gnu.org/software/binutils/
 
+The program 'arm-linux-gnueabi-gcc' is currently not installed. You can install it by typing:
+sudo apt install gcc-arm-linux-gnueabi
+
+fatal error: config.h: No such file or directory
+sudo apt-get install libconfig-dev
+
+gcc-arm-linux-gnueabi
+binutils-arm-linux-gnueabi
+xz-utils
+
+
+---
+
+download the source and configure to cross compile with make
+
+./configure --build x86_64-pc-linux-gnu --host arm-linux-gnueabi LDFLAGS="-static"
+make
+
+
+1. The compile issues a warning that a certain function
+could be modified for improved performance.
+2. The build process treats all warnings as errors.
+
+This typically happens when one builds coreutils
+directly from the git repository.
+
+It should never happen when building from an official tarball.
+
+
+If you are building from git (e.g. "git clone
+git://git.sv.gnu.org/coreutils.git") and still want to proceed, you can
+disable these warnings like so:
+
+git clone git://git.sv.gnu.org/coreutils.git
+cd coreutils
+./bootstrap
+./configure --disable-gcc-warnings
+make
+
+---
+
+
+Package ia32-libs is not available, but is referred to by another package.
+This may mean that the package is missing, has been obsoleted, or
+is only available from another source
+However the following packages replace it:
+  lib32ncurses5 lib32z1

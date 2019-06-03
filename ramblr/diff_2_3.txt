@@ -1,0 +1,351 @@
+19c19
+< l = logging.getLogger("angr.analyses.reassembler")
+---
+> l = logging.getLogger(name=__name__)
+74c74,78
+<     s = s.encode('string_escape')
+---
+> 
+>     if isinstance(s, bytes):
+>         s = "".join(chr(i) for i in s)
+> 
+>     s = s.encode('unicode_escape').decode("utf-8")
+139c143
+<             self.name = "label_%d" % Label.g_label_ctr.next()
+---
+>             self.name = "label_%d" % next(Label.g_label_ctr)
+305a310,323
+>         self.symbol_names = set()  # deduplicate symbol names
+> 
+>     def get_unique_symbol_name(self, symbol_name):
+>         if symbol_name not in self.symbol_names:
+>             self.symbol_names.add(symbol_name)
+>             return symbol_name
+> 
+>         i = 0
+>         while True:
+>             name = "%s_%d" % (symbol_name, i)
+>             if name not in self.symbol_names:
+>                 self.symbol_names.add(name)
+>                 return name
+>             i += 1
+322d339
+<         symbols_by_addr = self.project.loader.main_object.symbols_by_addr
+327c344
+<         elif addr in symbols_by_addr:
+---
+>         elif addr is not None and self.project.loader.find_symbol(addr) is not None:
+329,352c346,373
+<             symbol = symbols_by_addr[addr]
+<             symbol_name = symbol.name
+<             if '@' in symbol_name:
+<                 symbol_name = symbol_name[ : symbol_name.index('@') ]
+< 
+<             # check the type...
+<             if symbol.type == cle.Symbol.TYPE_FUNCTION:
+<                 # it's a function!
+<                 label = FunctionLabel(self.binary, symbol_name, addr)
+<             elif symbol.type == cle.Symbol.TYPE_OBJECT:
+<                 # it's an object
+<                 label = ObjectLabel(self.binary, symbol_name, addr)
+<             elif symbol.type == cle.Symbol.TYPE_NONE:
+<                 # notype
+<                 label = NotypeLabel(self.binary, symbol_name, addr)
+<             elif symbol.type == cle.Symbol.TYPE_SECTION:
+<                 # section label
+<                 # use a normal label instead
+<                 if not name:
+<                     # handle empty names
+<                     name = None
+<                 label = Label.new_label(self.binary, name=name, original_addr=addr)
+<             else:
+<                 raise Exception('Unsupported symbol type %s. Bug Fish about it!' % symbol.type)
+---
+>             symbol = self.project.loader.find_symbol(addr)
+>             if symbol.owner is self.project.loader.main_object:
+>                 symbol_name = symbol.name
+>                 if '@' in symbol_name:
+>                     symbol_name = symbol_name[ : symbol_name.index('@') ]
+> 
+>                 # check the type...
+>                 if symbol.type == cle.Symbol.TYPE_FUNCTION:
+>                     # it's a function!
+>                     unique_symbol_name = self.get_unique_symbol_name(symbol_name)
+>                     label = FunctionLabel(self.binary, unique_symbol_name, addr)
+>                 elif symbol.type == cle.Symbol.TYPE_OBJECT:
+>                     # it's an object
+>                     unique_symbol_name = self.get_unique_symbol_name(symbol_name)
+>                     label = ObjectLabel(self.binary, unique_symbol_name, addr)
+>                 elif symbol.type == cle.Symbol.TYPE_NONE:
+>                     # notype
+>                     unique_symbol_name = self.get_unique_symbol_name(symbol_name)
+>                     label = NotypeLabel(self.binary, unique_symbol_name, addr)
+>                 elif symbol.type == cle.Symbol.TYPE_SECTION:
+>                     # section label
+>                     # use a normal label instead
+>                     if not name:
+>                         # handle empty names
+>                         name = None
+>                     label = Label.new_label(self.binary, name=name, original_addr=addr)
+>                 else:
+>                     raise Exception('Unsupported symbol type %s. Bug Fish about it!' % symbol.type)
+367c388
+<         elif self.binary.main_nonexecutable_regions_contain(addr):
+---
+>         elif addr is not None and self.binary.main_nonexecutable_regions_contain(addr):
+382c403,404
+<         :param Label label: The label that is just assigned.
+---
+>         :param angr.analyses.reassembler.Label label:
+>                          The label that is just assigned.
+1188c1210
+<             pointer_size = self.binary.project.arch.bits / 8
+---
+>             pointer_size = self.binary.project.arch.bytes
+1194c1216
+<             pointers = self.size / pointer_size
+---
+>             pointers = self.size // pointer_size
+1213c1235
+<         content = self.binary.fast_memory_load(self.addr, self.size, str)
+---
+>         content = self.binary.fast_memory_load(self.addr, self.size, bytes)
+1225c1247
+<         for i in xrange(self.size):
+---
+>         for i in range(self.size):
+1231c1253
+<                     if self.sort == 'pointer-array' and addr % (self.project.arch.bits / 8) != 0:
+---
+>                     if self.sort == 'pointer-array' and addr % (self.project.arch.bytes) != 0:
+1233c1255
+<                         base_addr = addr - (addr % (self.project.arch.bits / 8))
+---
+>                         base_addr = addr - (addr % (self.project.arch.bytes))
+1329c1351
+<                     i += self.project.arch.bits / 8
+---
+>                     i += self.project.arch.bytes
+1331c1353
+<                     if isinstance(symbolized_label, (int, long)):
+---
+>                     if isinstance(symbolized_label, int):
+1378c1400
+<                     if self.addr is not None and addr_to_labels.keys()[0] == self.addr:
+---
+>                     if self.addr is not None and next(iter(addr_to_labels.keys())) == self.addr:
+1380c1402
+<                     elif self.addr is None and addr_to_labels.keys()[0] == 0:
+---
+>                     elif self.addr is None and next(iter(addr_to_labels.keys())) == 0:
+1386c1408
+<                         for label in addr_to_labels.values()[0]:
+---
+>                         for label in next(iter(addr_to_labels.values())):
+1405c1427
+<                             content += ['\t.byte %d' % ord(c)]
+---
+>                             content += ['\t.byte %d' % c]
+1437c1459
+<                         content += ['\t.byte %d' % ord(c)]
+---
+>                         content += ['\t.byte %d' % c]
+1440c1462
+<                     content += ['\t.byte %d' % ord(c) for c in piece]
+---
+>                     content += ['\t.byte %d' % c for c in piece]
+1463c1485
+<                         content += ['\t.byte %d' % ord(c)]
+---
+>                         content += ['\t.byte %d' % c]
+1466c1488
+<                     content += [ '\t.byte %d' % ord(c) for c in piece ]
+---
+>                     content += [ '\t.byte %d' % c for c in piece ]
+1510c1532
+<                 for i in xrange(0, len(self._initial_content), pointer_size):
+---
+>                 for i in range(0, len(self._initial_content), pointer_size):
+1551,1552c1573,1574
+<                 pointer_size = self.project.arch.bits / 8
+<                 pointers = self.size / pointer_size
+---
+>                 pointer_size = self.project.arch.bytes
+>                 pointers = self.size // pointer_size
+1555c1577
+<                 for i in xrange(pointers):
+---
+>                 for i in range(pointers):
+1558a1581,1582
+>                     if addr is None:
+>                         continue
+1577,1578c1601,1602
+<                 data = self.binary.fast_memory_load(self.addr, self.size, str)
+<                 if data[-1] == '\0':
+---
+>                 data = self.binary.fast_memory_load(self.addr, self.size, bytes)
+>                 if data[-1] == 0:
+1587c1611
+<                 data = self.binary.fast_memory_load(self.addr, self.size, str)
+---
+>                 data = self.binary.fast_memory_load(self.addr, self.size, bytes)
+1600c1624
+<                 data = self.binary.fast_memory_load(self.addr, self.size, str)
+---
+>                 data = self.binary.fast_memory_load(self.addr, self.size, bytes)
+1605c1629
+<                 content = self.binary.fast_memory_load(self.addr, self.size, str)
+---
+>                 content = self.binary.fast_memory_load(self.addr, self.size, bytes)
+1653,1654d1676
+<         self._ffi = cffi.FFI()
+< 
+1879,1880c1901,1902
+<             ptr_size = self.project.arch.bits / 8
+<             for i in xrange(0, insn_size):
+---
+>             ptr_size = self.project.arch.bytes
+>             for i in range(0, insn_size):
+1973c1995
+<         :param str initial_content: The initial content of the data entry.
+---
+>         :param bytes initial_content: The initial content of the data entry.
+1986,1987c2008,2009
+<             initial_content = ""
+<         initial_content = initial_content.ljust(size, "\x00")
+---
+>             initial_content = b""
+>         initial_content = initial_content.ljust(size, b"\x00")
+2090c2112
+<         addr_and_assembly = sorted(addr_and_assembly, key=lambda x: x[0])
+---
+>         addr_and_assembly = sorted(addr_and_assembly, key=lambda x: x[0] if x[0] is not None else -1)
+2141a2164
+>         refs = self.cfg.model.references
+2146c2169
+<         if len(cgcpl_memory_data.refs) != 1:
+---
+>         if len(refs.data_addr_to_ref[cgcpl_memory_data.addr]) != 1:
+2148c2171
+<         if len(cgcea_memory_data.refs) != 1:
+---
+>         if len(refs.data_addr_to_ref[cgcea_memory_data.addr]) != 1:
+2152c2175,2176
+<         if next(iter(cgcpl_memory_data.refs))[0] != next(iter(cgcea_memory_data.refs))[0]:
+---
+>         if next(iter(refs.data_addr_to_ref[cgcpl_memory_data.addr])).block_addr != \
+>                 next(iter(refs.data_addr_to_ref[cgcea_memory_data.addr])).block_addr:
+2155c2179
+<         insn_addr = next(iter(cgcpl_memory_data.refs))[2]
+---
+>         insn_addr = next(iter(refs.data_addr_to_ref[cgcpl_memory_data.addr])).insn_addr
+2263d2286
+<             'program_invocation_short_',
+2283c2306
+<                 for i in xrange(len(d.content)):
+---
+>                 for i in range(len(d.content)):
+2384c2407
+<         for addr, memory_data in cfg._memory_data.iteritems():
+---
+>         for addr, memory_data in cfg._memory_data.items():
+2495c2518
+<                         pointer_size = self.project.arch.bits / 8
+---
+>                         pointer_size = self.project.arch.bytes
+2540,2541c2563,2566
+<         data = self.fast_memory_load(addr, size, str)
+<         ints = [ord(i) for i in data]
+---
+>         data = self.fast_memory_load(addr, size, bytes)
+>         if data is None:
+>             return False
+>         ints = [i for i in data]
+2546a2572,2573
+>             if ptr is None:
+>                 return False
+2549d2575
+< 
+2583c2609
+<         for i in xrange(5, min(256, max_size)):
+---
+>         for i in range(5, min(256, max_size)):
+2632c2658
+<         data = self.fast_memory_load(data_addr, 20, str)
+---
+>         data = self.fast_memory_load(data_addr, 20, bytes)
+2634c2660
+<         if data[:4] != 'The ':
+---
+>         if data is not None and data[:4] != b'The ':
+2673c2699
+<         for offset in xrange(1, max_size):
+---
+>         for offset in range(1, max_size):
+2685c2711
+<         ptr_size = cfg.project.arch.bits / 8
+---
+>         ptr_size = cfg.project.arch.bytes
+2689c2715
+<         for offset in xrange(1, max_size - ptr_size + 1):
+---
+>         for offset in range(1, max_size - ptr_size + 1):
+2714c2740
+<         candidates = [ i for i in self.cfg.memory_data.itervalues() if
+---
+>         candidates = [ i for i in self.cfg.memory_data.values() if
+2716c2742
+<                        i.size == self.project.arch.bits / 8 and
+---
+>                        i.size == self.project.arch.bytes and
+2736,2737c2762,2763
+<             tmp_kb = KnowledgeBase(self.project, self.project.loader.main_object)
+<             cfg = self.project.analyses.CFGAccurate(kb=tmp_kb,
+---
+>             tmp_kb = KnowledgeBase(self.project)
+>             cfg = self.project.analyses.CFGEmulated(kb=tmp_kb,
+2782a2809,2824
+>         """
+>         Load memory bytes from loader's memory backend.
+> 
+>         :param int addr:    The address to begin memory loading.
+>         :param int size:    Size in bytes.
+>         :param data_type:   Type of the data.
+>         :param str endness: Endianness of this memory load.
+>         :return:            Data read out of the memory.
+>         :rtype:             int or bytes or str or None
+>         """
+> 
+>         if data_type is int:
+>             try:
+>                 return self.project.loader.memory.unpack_word(addr, size=size, endness=endness)
+>             except KeyError:
+>                 return None
+2785c2827,2830
+<             buff, _ = self.project.loader.memory.read_bytes_c(addr)
+---
+>             data = self.project.loader.memory.load(addr, size)
+>             if data_type is str:
+>                 return "".join(chr(i) for i in data)
+>             return data
+2789,2808d2833
+<         data = self._ffi.unpack(self._ffi.cast('char*', buff), size)
+< 
+<         if data_type in (int, long):
+<             if endness == 'Iend_LE':
+< 
+<                 if endness == 'Iend_LE':
+<                     fmt = "<"
+<                 else:
+<                     fmt = ">"
+<                 if size == 8:
+<                     fmt += "Q"
+<                 elif size == 4:
+<                     fmt += "I"
+<                 else:
+<                     raise BinaryError("Pointer size of %d is not supported" % size)
+< 
+<                 return struct.unpack(fmt, data)[0]
+< 
+<         else:
+<             return data

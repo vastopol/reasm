@@ -1,6 +1,0 @@
-pip install virtualenv
-virtualenv -p /usr/bin/python3 venv-angr
-source venv-angr/bin/activate
-pip install angr
-deactivate
-

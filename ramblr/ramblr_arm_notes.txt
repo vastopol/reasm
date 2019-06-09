@@ -1,11 +1,184 @@
 Risc Architecture support for Ramblr
 
-
 Goal to integrate the changes into the newer angr
 for usage with modern angr on python3
-
 
 https://github.com/angr/angr/pull/1183
 https://github.com/AndrewFasano/angr/tree/rarem_refactor
 https://github.com/AndrewFasano/ramblr-testsuite
+
+-----
+
+ramblr-testsuite
+
+running the test script results in auto generated files and folders
+
+rm -rf data/ platform.info results.txt
+
+need csmith to run the test scripts
+this only works when the csmith directory is in the ramblr-testsuite directory
+
+git clone https://github.com/csmith-project/csmith.git
+
+also need to apt install qemu-user-static
+
+or will get error message
+./test.sh: line 40: qemu-arm-static: command not found
+
+also need to fix the python module errors
+
+running the tests.sh script results in failures
+it will get through the first 13 tests then get stuck on test 14
+
+error is because of patcherex module
+
+Traceback (most recent call last):
+  File "./reassemble.py", line 3, in <module>
+    import patcherex
+ImportError: No module named patcherex
+
+have to git clone the repos containing the modules and pip install from source
+this is the same recursive dependency problem encountered before where the components need each other to work
+
+FIX patcherex
+
+git clone https://github.com/angr/patcherex.git
+cd patcherex
+pip install -e .
+
+  ERROR: Could not find a version that satisfies the requirement povsim (from patcherex==1.2) (from versions: none)
+  ERROR: Could not find a version that satisfies the requirement compilerex (from patcherex==1.2) (from versions: none)
+  ERROR: Could not find a version that satisfies the requirement fidget (from patcherex==1.2) (from versions: none)
+
+FIX povsim
+
+git clone https://github.com/mechaphish/povsim.git
+cd povsim
+pip install -e
+
+FIX compilerex
+
+git clone https://github.com/mechaphish/compilerex.git
+cd compilerex
+pip install -e
+
+FIX fidget
+
+git clone https://github.com/angr/fidget.git
+cd fidget
+pip install -e
+
+-----
+
+after this it seems to somewhat work as the reassembler will generate output,
+all outputs are errors and warnings and it seems to crash and fail
+
+WARNING | 2019-06-08 22:19:05,772 | angr.engines.successors | Exit state has over 256 possible solutions. Likely unconstrained; skipping. <BV32 global_c00022c_20998_32{UNINITIALIZED}>
+ERROR   | 2019-06-08 22:19:05,794 | angr.analyses.cfg.cfg_fast | Decoding error occurred at basic block address 0x2018480 of function 0x2018480.
+
+Traceback (most recent call last):
+  File "./reassemble.py", line 27, in <module>
+    backend = ReassemblerBackend(name)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/patcherex/patcherex/backends/reassembler_backend.py", line 40, in __init__
+    self._load()
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/patcherex/patcherex/backends/reassembler_backend.py", line 296, in _load
+    self._binary = self.project.analyses.Reassembler(syntax='at&t', remove_cgc_attachments=self.try_pdf_removal)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/analysis.py", line 108, in __call__
+    oself.__init__(*args, **kwargs)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/reassembler.py", line 1668, in __init__
+    self._initialize()
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/reassembler.py", line 2337, in _initialize
+    old_capstone_syntax = self.project.arch.capstone_x86_syntax
+AttributeError: 'ArchARMEL' object has no attribute 'capstone_x86_syntax'
+
+
+-----
+
+I think this is happening because the angr version in the virtual environment doesn't have the modified arm stuff
+this could probably be fixed by swapping out the entire angr folder in venv-angr/local/lib/python2.7/site-packages/angr/
+
+however when try to swap out that folder for the angr arm refactor branch
+
+WARNING | 2019-06-08 22:57:39,801 | angr.state_plugins.unicorn_engine | failed loading "angr_native.so", unicorn support disabled (/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/lib/angr_native.so: cannot open shared object file: No such file or directory: /home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/lib/angr_native.so: cannot open shared object file: No such file or directory)
+WARNING | 2019-06-08 22:57:40,324 | angr.analyses.disassembly_utils | Your version of capstone does not support MIPS instruction groups.
+WARNING | 2019-06-08 22:57:40,735 | angr.analyses.cfg.cfg_fast | "auto_load_libs" is enabled. With libraries loaded in project, CFGFast will cover libraries, which may take significantly more time than expected. You may reload the binary with "auto_load_libs" disabled, or specify "regions" to limit the scope of CFG recovery.
+Traceback (most recent call last):
+  File "./reassemble.py", line 27, in <module>
+    backend = ReassemblerBackend(name)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/patcherex/patcherex/backends/reassembler_backend.py", line 40, in __init__
+    self._load()
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/patcherex/patcherex/backends/reassembler_backend.py", line 296, in _load
+    self._binary = self.project.analyses.Reassembler(syntax='at&t', remove_cgc_attachments=self.try_pdf_removal)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/analysis.py", line 108, in __call__
+    oself.__init__(*args, **kwargs)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/reassembler/reassembler.py", line 117, in __init__
+    self._initialize()
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/reassembler/reassembler.py", line 967, in _initialize
+    arch_options=arch_options
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/analysis.py", line 108, in __call__
+    oself.__init__(*args, **kwargs)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/cfg/cfg.py", line 55, in __init__
+    CFGFast.__init__(self, **kwargs)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/cfg/cfg_fast.py", line 1011, in __init__
+    self._analyze()
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/forward_analysis.py", line 552, in _analyze
+    self._analysis_core_baremetal()
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/forward_analysis.py", line 677, in _analysis_core_baremetal
+    self._process_job_and_get_successors(job_info)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/forward_analysis.py", line 695, in _process_job_and_get_successors
+    successors = self._get_successors(job)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/cfg/cfg_fast.py", line 1398, in _get_successors
+    jobs = self._scan_block(job)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/cfg/cfg_fast.py", line 1653, in _scan_block
+    entries = self._scan_irsb(cfg_job, current_func_addr)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/cfg/cfg_fast.py", line 1759, in _scan_irsb
+    addr, function_addr, cfg_node, irsb = self._generate_cfgnode(cfg_job, current_func_addr)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/cfg/cfg_fast.py", line 3732, in _generate_cfgnode
+    return addr, current_function_addr, cfg_node, irsb
+UnboundLocalError: local variable 'cfg_node' referenced before assignment
+
+-----
+
+could try adding cfg_node=None at line 3547 in cfg_fast.py
+
+now gets new errors
+
+ERROR   | 2019-06-08 23:23:17,296 | angr.analyses.cfg.cfg_fast | Decoding error occurred at basic block address 0x1016bfa of function 0x1016bfa.
+ERROR   | 2019-06-08 23:23:17,297 | angr.analyses.cfg.cfg_fast | Decoding error occurred at basic block address 0x1016bfe of function 0x1016bfe.
+Traceback (most recent call last):
+  File "./reassemble.py", line 27, in <module>
+    backend = ReassemblerBackend(name)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/patcherex/patcherex/backends/reassembler_backend.py", line 40, in __init__
+    self._load()
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/patcherex/patcherex/backends/reassembler_backend.py", line 296, in _load
+    self._binary = self.project.analyses.Reassembler(syntax='at&t', remove_cgc_attachments=self.try_pdf_removal)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/analysis.py", line 108, in __call__
+    oself.__init__(*args, **kwargs)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/reassembler/reassembler.py", line 117, in __init__
+    self._initialize()
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/reassembler/reassembler.py", line 967, in _initialize
+    arch_options=arch_options
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/analysis.py", line 108, in __call__
+    oself.__init__(*args, **kwargs)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/cfg/cfg.py", line 55, in __init__
+    CFGFast.__init__(self, **kwargs)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/cfg/cfg_fast.py", line 1011, in __init__
+    self._analyze()
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/forward_analysis.py", line 552, in _analyze
+    self._analysis_core_baremetal()
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/forward_analysis.py", line 677, in _analysis_core_baremetal
+    self._process_job_and_get_successors(job_info)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/forward_analysis.py", line 695, in _process_job_and_get_successors
+    successors = self._get_successors(job)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/cfg/cfg_fast.py", line 1398, in _get_successors
+    jobs = self._scan_block(job)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/cfg/cfg_fast.py", line 1650, in _scan_block
+    entries = self._scan_procedure(cfg_job, current_func_addr)
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/angr/analyses/cfg/cfg_fast.py", line 1716, in _scan_procedure
+    grandparent_nodes = list(self.graph.predecessors(cfg_job.src_node))
+  File "/home/duluoz/Desktop/srich009/research/angry/arm_angr/venv-angr/local/lib/python2.7/site-packages/networkx/classes/digraph.py", line 793, in predecessors
+    raise NetworkXError("The node %s is not in the digraph." % (n,))
+networkx.exception.NetworkXError: The node None is not in the digraph.
+
+not sure what to do...
 

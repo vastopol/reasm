@@ -1,0 +1,17 @@
+Generic Python2 vs Python3 reassembler
+
+diff reassembler2.py reassembler3.py
+
+most of the changes seem be be fairly standard
+some invlove adding extra error checking for None and returning false
+some are from moving towards the python3 way of doing things
+    xrange() -> range
+some seem to be about making the platform more concise
+    bits / 8 -> bytes
+some are changes in the calls to methods or accessing data
+
+many occurrences of differences between 2 vs 3 seem harmless
+    changes about logging
+    unicode escapes
+    how to get the next label
+
